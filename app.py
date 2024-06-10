@@ -53,9 +53,26 @@ app.layout = html.Div(
     prevent_initial_call=True
 )
 
-# for testing now
-def checkLogin():
-    pass
+def checkLogin(n_clicks, userName, password):
+    if not n_clicks:
+        raise PreventUpdate
+
+    connection = sqlite3.connect('user_data.db')
+    cursor = connection.cursor()
+    command = """CREATE TABLE IF NOT EXISTS users(name TEXT, password TEXT)"""
+    cursor.execute(command)
+    cursor.execute("INSERT INTO users VALUES ('admin','1234')")
+    connection.commit()
+    query = "SELECT name,password FROM users where name= '" + \
+        userName+"' and password='"+password+"'"
+    cursor.execute(query)
+    results = cursor.fetchall()
+    if len(results) != 0:
+        user = User(userName)
+        login_user(user)
+        return '/about', dash.no_update
+    else:
+        return '/login', 'Incorrect Credentials Try Again'
 
 allCallbacks()
 
