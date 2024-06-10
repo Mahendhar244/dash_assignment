@@ -148,15 +148,34 @@ def displayPages():
               prevent_initial_call=True)
     def display_page(pathname):
         view = None
-        url = dash.no_update
-        if pathname == "/about":
-            view = aboutlogout()  
-        elif pathname == "/inputField":
-            view = inputLayout()  
-        elif pathname == "/simulation":
-            view = simulationLayout()  
-        else:
-            view = html.Div("Page not found")
+        url = no_update
+        if pathname == '/login':
+            view = loginLayout()
+        elif pathname == '/about':
+            if current_user.is_authenticated:
+                view = aboutlogout()
+            else:
+                view = loginLayout()
+                url = '/login'
+        elif pathname == '/inputField':
+            if current_user.is_authenticated:
+                view = inputLayout()
+            else:
+                view = loginLayout()
+                url = '/login'
+        elif pathname == '/logout':
+            if current_user.is_authenticated:
+                logout_user()
+                view = logoutLayout()
+            else:
+                view = loginLayout()
+                url = '/login'
+        elif pathname == '/simulation':
+            if current_user.is_authenticated:
+                view = simulationLayout()
+            else:
+                view = loginLayout()
+                url = '/login'
         return view, url
 
 
