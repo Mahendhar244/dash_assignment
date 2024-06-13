@@ -3,7 +3,7 @@ from dash import Dash, html, dcc, Input, Output, callback, State
 import dash_bootstrap_components as dbc
 from flask import Flask
 from flask_login import LoginManager, UserMixin, login_user
-from views.callbacks import allCallbacks
+from pages.callbacks import allCallbacks
 from dash.exceptions import PreventUpdate
 import sqlite3
 
