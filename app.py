@@ -1,14 +1,36 @@
 import dash
 from dash import Dash, html, dcc, Input, Output, callback, State
 import dash_bootstrap_components as dbc
-from pages.callbacks import allCallbacks
+from flask import Flask
+from flask_login import LoginManager, UserMixin, login_user
+from views.callbacks import allCallbacks
+from dash.exceptions import PreventUpdate
+import sqlite3
 
+server = Flask(__name__)
+server.config.update(SECRET_KEY="MY_SECRET_KEY")
 
-app = dash.Dash(
+app = Dash(
     __name__,
+    server=server,
+    use_pages=False,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
     suppress_callback_exceptions=True,
 )
+
+login_manager = LoginManager()
+login_manager.init_app(server)
+login_manager.login_view = "/login"
+
+
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+
+@login_manager.user_loader
+def load_user(username):
+    return User(username)
 
 
 navbar = dbc.NavbarSimple(
@@ -43,38 +65,39 @@ app.layout = html.Div(
     ],
 )
 
-@app.callback(
-    Output('redirect', 'pathname'),
-    Output('incorrectCredentials', 'children'),
-    Input('loginUser', 'n_clicks'),
-    [State('usernameField', 'value'),
-     State('passwordField', 'value')
-     ],
-    prevent_initial_call=True
+app.callback(
+    Output("redirect", "pathname"),
+    Output("incorrectCredentials", "children"),
+    Input("loginUser", "n_clicks"),
+    [State("usernameField", "value"), State("passwordField", "value")],
+    prevent_initial_call=True,
 )
-
 def checkLogin(n_clicks, userName, password):
     if not n_clicks:
         raise PreventUpdate
 
-    connection = sqlite3.connect('user_data.db')
+    connection = sqlite3.connect("users.db")
     cursor = connection.cursor()
-    command = """CREATE TABLE IF NOT EXISTS users(name TEXT, password TEXT)"""
-    cursor.execute(command)
-    cursor.execute("INSERT INTO users VALUES ('admin','1234')")
-    connection.commit()
-    query = "SELECT name,password FROM users where name= '" + \
-        userName+"' and password='"+password+"'"
+    query = (
+        "SELECT name,password FROM users where name= '"
+        + userName
+        + "' and password='"
+        + password
+        + "'"
+    )
     cursor.execute(query)
     results = cursor.fetchall()
+    connection.close()
+
     if len(results) != 0:
         user = User(userName)
         login_user(user)
-        return '/about', dash.no_update
+        return "/about", dash.no_update
     else:
-        return '/login', 'Incorrect Credentials Try Again'
+        return "/login", "Incorrect Credentials. Try Again"
+
 
 allCallbacks()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
